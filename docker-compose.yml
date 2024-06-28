@@ -1,0 +1,68 @@
+version: "3.9"
+
+services:
+    django: &backend
+        image: backend
+        entrypoint: uwsgi --master --http 0.0.0.0:8000 --wsgi-file backend/wsgi.py
+        #entrypoint: python manage.py runserver 0.0.0.0:8000
+        restart: unless-stopped
+        build:
+            context: backend
+            dockerfile: Dockerfile
+        depends_on:
+            -   pgbouncer
+        volumes:
+            # this path must be absolute to the host. This compose file is used for docker-in-docker during deployment.
+            # by default, the PWD would be the one inside the deployment-container which doesn't match the host.
+            # as a result, the .env file could not be mapped and an empty folder named '.env' would be created
+            # see: https://forums.docker.com/t/mounting-a-volume-not-working-with-running-docker-in-docker/25775/2
+            - /volume1/varia/src/contacts-reminder/.env:/app/.env
+        environment:
+            - ENV_FILE=/app/.env
+    scheduler:
+        <<: *backend
+        entrypoint: python manage.py notifydue --schedule
+    mailer:
+        <<: *backend
+        entrypoint: python manage.py sendmails --schedule
+    nginx:
+#        image: frontend:${TAG}
+        restart: unless-stopped
+        build:
+            context: .
+            dockerfile: nginx/Dockerfile
+
+            args:
+                STATIC_ROOT: "/"
+    db:
+        image: postgres:15
+        restart: unless-stopped
+        ports:
+          - "5432:5432"
+#        volumes:
+#            - ${DB_STORAGE_PATH:?err}/db/data:/var/lib/postgresql/data
+#            - ${DB_STORAGE_PATH:?err}/db/conf:/etc/postgresql
+#            - ${DB_STORAGE_PATH:?err}/db/log:/var/log/postgresql
+        environment:
+            - POSTGRES_DB=${DB_NAME}
+            - POSTGRES_USER=${DB_USER}
+            - POSTGRES_PASSWORD=${DB_PASSWORD}
+            - TZ=${TZ}
+    pgbouncer:
+        image: pgbouncer:1.18.0
+        restart: unless-stopped
+        build:
+            context: pgbouncer
+            dockerfile: Dockerfile
+            args:
+                VERSION: "1.18.0"
+        depends_on:
+            -   db
+        environment:
+            - DATABASE_URL=
+            - AUTH_TYPE=plain
+            - DB_HOST=db
+            - DB_PORT=5432
+            - DB_NAME=${DB_NAME}
+            - DB_USER=${DB_USER}
+            - DB_PASSWORD=${DB_PASSWORD}

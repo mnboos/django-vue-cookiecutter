@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load vue_utils %}
+
+{% block header_name %}Choose your Rewards{% endblock header_name %}
+
+{% block content %}
+
+    <!-- Show redeemed and unredeemed points -->
+    <div class="mt-4">
+        <div id="points-status"
+             {# pass root properties via the dataset #}
+             data-points-available="{{ redeemable_points }}"
+             data-claim-url="{% url 'rewards:claim' %}">
+          {# 'djangoSlots' can be addressed by name and used as content in Vue components #}
+          <h4 class="text-center mb-5" data-django-slot="message">You've earned DjangoCon rewards!</h4>
+          {# They can include template logic and may be teleported anywhere on the page #}
+          <p class="text-muted p-3" data-django-slot="disclaimer">
+            Welcome, {{ request.user }}. This app is for demonstration purposes only. Rewards are entirely fictitious and may not be redeemed.
+          </p>
+        </div>
+    </div>
+
+    <!-- List the available rewards -->
+    <div class="row mt-4">
+
+        {% for r in rewards %}
+            <div class="col-12 col-sm-6 col-lg-4 gy-5">
+                <div class="card text-white bg-primary">
+
+                    <div class="card-header d-flex justify-content-between gap-2">
+                        <span class="h4 flex-grow">{{ r.name }}</span>
+                        <span class="h5">{{ r.point_value }}<small>pts</small></span>
+                    </div>
+
+                    <div class="card-body">
+                      <p>{{ r.description }}</p>
+                      <div class="reward-claim text-center" data-reward-id="{{ r.id }}" data-points="{{ r.point_value }}"></div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+
+    </div>
+
+{% endblock content %}
+
+{% block inline_javascript %}
+    <script type="module" crossorigin src="{% vue_bundle_url 'reward' %}"></script>
+
+    {# 'provide" strings which can 'injected' throughout the Vue app, including from within a pinia store #}
+    {% url 'rewards:bonus' as addPointsUrl %}
+    {% vue_provide 'addPointsUrl' addPointsUrl %}
+{% endblock inline_javascript %}

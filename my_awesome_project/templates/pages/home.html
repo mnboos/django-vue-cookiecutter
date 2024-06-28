@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% load vue_utils %}
+
+{% block content %}
+
+<div id="app">
+  <h1>You're almost there!</h1>
+  <hr />
+  <p>To see Vue in action alongside this Django application, run the Vite dev server.</p>
+
+  <h5>in a terminal, run:</h5>
+
+  <code>
+     cd vue_frontend<br/>
+     npm install<br/>
+     npm run dev<br/>
+     </code>
+  <br/>
+
+  
+  <h5>or via Pycharm:</h5>
+  <br/>
+  <p>Set your Node interpreter in PyCharm (<code>Settings -> Languages & Frameworks -> Node.js</code>)
+    then execute the run configuration <code>npm install</code> then <code>vite dev</code></p>
+  
+
+  
+
+
+
+</div>
+{% endblock content %}
+
+{% block inline_javascript %}
+  <script type="module" crossorigin src="{% vue_bundle_url 'main' %}"></script>
+{% endblock inline_javascript %}
+
